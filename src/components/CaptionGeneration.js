@@ -6,44 +6,61 @@ const CaptionGeneration = () => {
     const [captions, setCaptions] = useState([]);
     const [hashtags, setHashtags] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [imageUrl, setImageUrl] = useState('');
 
     const handleGenerateCaptions = async () => {
-        if (!inputText && !image) return alert('Please enter some text or upload an image!');
+        if (!inputText && !image && !imageUrl) return alert('Please enter some text and provide an image!');
     
         setLoading(true);
         const formData = new FormData();
-    
-        if (inputText) {
-            formData.append('inputText', inputText);
-        }
-    
-        if (image) {
+        formData.append('text', inputText);
+        
+        if (imageUrl) {
+            formData.append('image_url', imageUrl);
+        } else if (image) {
             formData.append('image', image);
         }
     
         try {
-            const response = await fetch('http://localhost:5002/generate-caption', {
+            const response = await fetch('http://localhost:5000/gemini', {
                 method: 'POST',
-                body: formData,  // Let FormData set the content type
+                body: formData,
             });
     
             const data = await response.json();
-            if (data.captions) {
-                setCaptions(data.captions); // Set the captions
-                setHashtags(data.hashtags); // Set the hashtags
+            
+            console.log('Response from server:', data); 
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            if (Array.isArray(data) && data.length > 0) {
+                const allCaptions = data.map(item => item.caption || '');
+                const allHashtags = data.map(item => item.hashtags || '');
+                
+                if (allCaptions.length === 0 || allHashtags.length === 0) {
+                    throw new Error('No valid captions or hashtags in response');
+                }
+                
+                setCaptions(allCaptions);
+                setHashtags(allHashtags);
             } else {
-                throw new Error('No captions or hashtags returned');
+                throw new Error('Invalid response format from server');
             }
         } catch (error) {
-            alert('Error generating captions');
+            console.error('Error details:', error);
+            alert('Error generating captions: ' + error.message);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
     
 
     const handleImageChange = (event) => {
         setImage(event.target.files[0]);
     };
+
+    
 
     return (
         <div className="caption-generation-container">
@@ -53,15 +70,51 @@ const CaptionGeneration = () => {
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Enter your text here..."
                 rows="4"
-                style={{ width: '100%' }}
+                style={{ 
+                    width: '70%',
+                    borderRadius: '8px',
+                    border: '2px solid black',
+                    boxShadow: '0px 0px 5px 0px black',
+                    fontFamily: 'Poppins',
+                    letterSpacing: '1px',
+                    padding: '10px',
+                 }}
             />
             <input
                 type="file"
                 accept="image/*"
                 onChange={handleImageChange}
-                style={{ marginTop: '10px' }}
+                style={{ 
+                    marginTop: '10px',
+                    fontFamily: 'Poppins',
+                }}
             />
-            <button onClick={handleGenerateCaptions} disabled={loading}>
+            <input
+                type="text"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="Or enter image URL..."
+                style={{ 
+                    width: '70%',
+                    borderRadius: '8px',
+                    border: '2px solid black',
+                    boxShadow: '0px 0px 5px 0px black',
+                    fontFamily: 'Poppins',
+                    letterSpacing: '1px',
+                    padding: '10px', 
+                }}
+            />
+            <button onClick={handleGenerateCaptions} disabled={loading} style={{ 
+                    width: '30%',
+                    borderRadius: '8px',
+                    border: '2px solid black',
+                    boxShadow: '0px 0px 5px 0px black',
+                    fontFamily: 'Poppins',
+                    fontWeight: 'bold',
+                    letterSpacing: '1px',
+                    padding: '10px',
+                    cursor: 'pointer', 
+                }}>
                 {loading ? 'Generating...' : 'Generate Captions'}
             </button>
 
@@ -92,8 +145,12 @@ const CaptionGeneration = () => {
                     .caption-generation-container {
                         display: flex;
                         flex-direction: column;
-                        align-items: center;
+                        // align-items: center;
                         gap: 20px;
+                        padding: 10px;
+                        font-family: poppins;
+                        // background: linear-gradient(to bottom right, #4b0b6a, #ffffff);
+                        
                     }
                     ul {
                         margin-top: 20px;

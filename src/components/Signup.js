@@ -1,24 +1,58 @@
-import React from 'react';
+import {React, useState} from 'react';
+import Navbar from './Navbar';
+import { auth } from '../firebase';
+import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
 const SignUp = () => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      console.log('User signed up successfully');
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      console.log('User signed up with Google');
+    } catch (error) {
+      setError(error.message);
+    }
+  };
     return (
+      <>
+      <Navbar/>
       <div className="auth-container">
         <div className="auth-card">
           <h1 className="logo">POSTAI</h1>
           <h2>Create an account</h2>
           <p>Sign up to start using the platform.</p>
-          <button className="google-login">Sign up with Google</button>
+          <button className="google-login" onClick={handleGoogleSignUp}>Sign up with Google</button>
           <div className="divider">
             <span>or</span>
           </div>
-          <form>
-            <input type="text" placeholder="Your Name" required />
-            <input type="email" placeholder="Your Email" required />
-            <input type="password" placeholder="Password" required />
+          {error && <p style={{ color: 'red' }}>{error}</p>}
+          <form onSubmit={handleSignUp}>
+            <input type="text" placeholder="Your Name" value={name}
+              onChange={(e) => setName(e.target.value)}
+              required  />
+            <input type="email" placeholder="Your Email" value={email}
+              onChange={(e) => setEmail(e.target.value)} required />
+            <input type="password" placeholder="Password" value={password}
+              onChange={(e) => setPassword(e.target.value)} required />
             <button type="submit" className="login-btn">Sign Up</button>
           </form>
           <p className="bottom-text">
-            Already have an account? <a href="#">Login</a>
+            Already have an account? <a href="/login">Login</a>
           </p>
         </div>
         <style>{`
@@ -28,6 +62,7 @@ const SignUp = () => {
           align-items: center;
           height: 100vh;
           background-color: #f9f9f9;
+          background: linear-gradient(to bottom right, #4b0b6a, #ffffff);
           font-family: Arial, sans-serif;
         }
         .auth-card {
@@ -41,7 +76,7 @@ const SignUp = () => {
         .logo {
           font-size: 1.8em;
           font-weight: bold;
-          color: #007bff;
+          color: #8709F6;
           margin-bottom: 10px;
         }
         h2 {
@@ -55,7 +90,7 @@ const SignUp = () => {
           width: 100%;
           padding: 10px;
           border: none;
-          background: #4285f4;
+          background: #8709F6;
           color: white;
           font-size: 1em;
           border-radius: 5px;
@@ -94,7 +129,7 @@ const SignUp = () => {
         .login-btn {
           width: 100%;
           padding: 10px;
-          background: #007bff;
+          background: #8709F6;
           color: white;
           font-size: 1em;
           border: none;
@@ -113,6 +148,7 @@ const SignUp = () => {
         }
       `}</style>
       </div>
+      </>
     );
   };
 export default SignUp
